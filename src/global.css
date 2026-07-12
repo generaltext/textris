@@ -1,0 +1,41 @@
+@import 'tailwindcss';
+
+/* Fallback design tokens for standalone / demo (no shell). In a real General
+   Text install the runtime injects the true --gt-* palette on <html> and toggles
+   the `dark` class itself, which takes precedence over these. */
+:root {
+  --gt-bg: #f5f5f5;
+  --gt-bg-elev: #ffffff;
+  --gt-fg: #171717;
+  --gt-fg-2: #404040;
+  --gt-fg-3: #737373;
+  --gt-border: #d4d4d4;
+  --gt-divider: rgba(0, 0, 0, 0.07);
+  --gt-accent: #0891b2;
+  --gt-accent-soft: rgba(8, 145, 178, 0.12);
+}
+
+html.dark {
+  --gt-bg: #0a0a0a;
+  --gt-bg-elev: #1a1a1a;
+  --gt-fg: #ededed;
+  --gt-fg-2: #b5b5b5;
+  --gt-fg-3: #808080;
+  --gt-border: #2a2a2a;
+  --gt-divider: rgba(255, 255, 255, 0.07);
+  --gt-accent: #22d3ee;
+  --gt-accent-soft: rgba(34, 211, 238, 0.14);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--gt-bg);
+  color: var(--gt-fg);
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+}

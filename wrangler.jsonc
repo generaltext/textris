@@ -1,0 +1,15 @@
+{
+  // Cloudflare Workers static-assets deploy (`wrangler deploy`).
+  //
+  // Assets-only Worker: no server code (`main`), it just serves the built SPA in
+  // `dist/`. SPA fallback for client-side routes like `/demo` is handled by
+  // `not_found_handling: "single-page-application"` — any request that doesn't
+  // match a real file returns `index.html` (200).
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "textris",
+  "compatibility_date": "2026-06-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "textris",
+  "displayName": "Textris",
+  "version": "0.1.0",
+  "gtApi": "^1.0",
+  "blurb": "Tetris with a leaderboard you can't fake: every score is a signed, replayable game your friends can verify.",
+  "icon": {
+    "kind": "svg",
+    "value": "<svg viewBox='0 0 24 24' fill='currentColor'><rect x='9' y='5.5' width='6' height='6' rx='1'/><rect x='2.5' y='12' width='6' height='6' rx='1'/><rect x='9' y='12' width='6' height='6' rx='1'/><rect x='15.5' y='12' width='6' height='6' rx='1'/></svg>"
+  },
+  "color": "cyan",
+  "tags": ["game", "tetris", "arcade", "leaderboard"],
+  "repository": "https://github.com/generaltext/textris",
+  "url": "https://textris.generaltext.org"
+}

@@ -1,0 +1,7 @@
+# CORS for install-from-URL: the General Text web app fetches gt.json + the built
+# assets directly from the BROWSER (client-side install keeps the server blind to
+# what you install), so this origin must allow cross-origin reads. App code is
+# public by design (the gallery serves it publicly) — `*` with no credentials is
+# safe. Desktop installs use a native fetch and don't need this.
+/*
+  Access-Control-Allow-Origin: *
