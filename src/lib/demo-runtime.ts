@@ -85,6 +85,8 @@ function createDemoRuntime(): GtApi {
 
     subscribeFile: (path) => makeText(path),
     unsubscribeFile: () => {},
+    // Local demo: every file is already loaded, so "synced" is immediate.
+    whenFileSynced: () => Promise.resolve(),
     applyDiff(text, oldVal, newVal) {
       if (oldVal === newVal) return
       let start = 0

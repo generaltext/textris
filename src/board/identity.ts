@@ -30,6 +30,11 @@ interface StoredIdentity {
 }
 
 export async function loadOrCreateIdentity(): Promise<Identity> {
+  // Wait for the identity file to sync before deciding it's absent. `gt.ready`
+  // only means the workspace connected; on desktop a not-yet-synced readFile
+  // resolves empty (not a throw), so without this we'd mint a fresh keypair and
+  // write a duplicate leaderboard identity on every open.
+  await window.gt.whenFileSynced(IDENTITY_PATH)
   const existing = await tryLoad()
   if (existing) return existing
 
