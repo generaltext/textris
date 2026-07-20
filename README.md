@@ -37,12 +37,11 @@ Editing a score breaks (1); altering a replay breaks (2); a forged-but-signed hi
 All under the app's own `data/` folder, addressed relative and versioned as `v0/`:
 
 ```
-v0/identity.json            the player's signing keypair + display name
-v0/scores/<pubkeyId>.jsonl  one signed record per game (you only ever write your own file)
+v0/scores/<pubkeyId>.jsonl  one signed record per game (single-writer, per device)
 v0/replays/<runId>.txt      the full replayable input log for each game
 ```
 
-Record-per-writer (one score file per player) means concurrent players never contend under the CRDT. In a shared workspace, everyone's files sync in and every client verifies everyone else's, so it becomes a live shared leaderboard with no server keeping score.
+Record-per-writer (one score file per device signing key) means concurrent players never contend under the CRDT. The signing keypair itself is **not** in the workspace: it lives in the device's `localStorage`, so it's never shared with other members (the app data folder syncs to everyone, so a key stored there would be shared, which is exactly the bug that keying off the account and a device-local key avoids). Display identity (`player.id` for the score file, `player.gtUser` for the "you" highlight, and the name) comes from `gt.user()`. In a shared workspace, everyone's files sync in and every client verifies everyone else's, so it becomes a live shared leaderboard with no server keeping score.
 
 ## Project structure
 

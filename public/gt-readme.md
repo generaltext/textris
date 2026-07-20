@@ -23,9 +23,10 @@ You can **watch any run** on the board, replayed move for move.
 
 Textris writes plaintext files you own, under its data folder:
 
-- `v0/scores/<you>.jsonl`: one signed record per game you play (you only ever write your own file).
+- `v0/scores/<key>.jsonl`: one signed record per game, in a per-device file with a single writer.
 - `v0/replays/<run>.txt`: the full, replayable input log for each game.
-- `v0/identity.json`: your signing keypair, which stays in your workspace.
+
+Your signing key stays on your own device (browser storage), never in the shared workspace, so no one else can sign as you. Your name comes from your General Text account.
 
 Share a workspace with friends and it becomes a live, shared leaderboard: everyone's games sync in, and every device verifies every other player's. There's no server keeping score, and no account beyond the workspace you're already in.
 

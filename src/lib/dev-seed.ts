@@ -14,7 +14,7 @@ import type { Action, InputEvent } from '~/engine/types'
 async function throwawayIdentity(): Promise<Identity> {
   const pair = await generateKeyPair()
   const publicJwk = await exportJwk(pair.publicKey)
-  return { pubkeyId: await pubkeyId(publicJwk), publicJwk, privateKey: pair.privateKey, name: '' }
+  return { pubkeyId: await pubkeyId(publicJwk), publicJwk, privateKey: pair.privateKey }
 }
 
 // A deterministic bot: mostly shuffle-and-drop, so it survives a bit and racks up

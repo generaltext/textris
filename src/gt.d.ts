@@ -19,7 +19,9 @@ interface GtText {
 interface GtUser {
   id: string
   name: string
-  email: string
+  /** Present only in standalone dev; the shell never sends email into the sandbox. */
+  image?: string | null
+  email?: string
 }
 
 interface GtApi {

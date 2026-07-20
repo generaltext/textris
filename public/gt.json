@@ -1,7 +1,7 @@
 {
   "name": "textris",
   "displayName": "Textris",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "gtApi": "^1.0",
   "blurb": "Tetris with a leaderboard you can't fake: every score is a signed, replayable game your friends can verify.",
   "icon": {

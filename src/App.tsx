@@ -3,7 +3,12 @@ import { CalendarDays, ChevronLeft, Dices, Loader2, Moon, Shield, Sun } from 'lu
 import Game from '~/game/Game'
 import Leaderboard from '~/board/Leaderboard'
 import { useTheme } from '~/lib/use-theme'
-import { loadOrCreateIdentity, renameIdentity, type Identity } from '~/board/identity'
+import {
+  getNameOverride,
+  loadOrCreateIdentity,
+  setNameOverride,
+  type Identity,
+} from '~/board/identity'
 import { dailyChallenge, freeSeed, submitRun } from '~/board/records'
 import { seedDemo } from '~/lib/dev-seed'
 import type { GameOverInfo } from '~/game/loop'
@@ -16,6 +21,7 @@ export default function App() {
   const [view, setView] = useState<View>({ kind: 'menu' })
   const [playerName, setPlayerName] = useState('Player')
   const [myId, setMyId] = useState<string | null>(null)
+  const [myGtUserId, setMyGtUserId] = useState<string | undefined>(undefined)
   const [editingName, setEditingName] = useState(false)
   const [nameDraft, setNameDraft] = useState('')
 
@@ -29,24 +35,22 @@ export default function App() {
     ;(async () => {
       await window.gt.ready
       await seedDemo()
+      // Signing key is per-device (localStorage), not the shared workspace, so
+      // each player has a unique key and score file.
       const identity = await loadOrCreateIdentity()
       if (cancelled) return
       identityRef.current = identity
       setMyId(identity.pubkeyId)
 
-      // Name resolution: a previously saved name wins; otherwise seed from the
-      // account if it's reachable (it often isn't inside the web sandbox, where
-      // gt.user() returns null), and persist it; otherwise a generic default the
-      // player can edit.
-      let name = identity.name
+      // Identity + name come from the account (per-user), NOT a synced file: a
+      // manual per-device override wins, else the real account name, else a
+      // default. gtUserId drives the "(you)" highlight so it's correct per person
+      // and across a user's devices.
       const user = await window.gt.user().catch(() => null)
       userIdRef.current = user?.id
-      if (!name && user?.name) {
-        name = user.name
-        await renameIdentity(name).catch(() => {})
-      }
-      if (!name) name = 'Player'
+      const name = getNameOverride() || user?.name || 'Player'
       if (cancelled) return
+      setMyGtUserId(user?.id)
       nameRef.current = name
       setPlayerName(name)
       setReady(true)
@@ -93,16 +97,12 @@ export default function App() {
     setNameDraft(playerName === 'Player' ? '' : playerName)
     setEditingName(true)
   }
-  const saveName = async () => {
+  const saveName = () => {
     const n = nameDraft.trim().slice(0, 24) || 'Player'
     nameRef.current = n
     setPlayerName(n)
     setEditingName(false)
-    try {
-      await renameIdentity(n)
-    } catch {
-      /* best-effort; the name still applies this session */
-    }
+    setNameOverride(n) // per-device localStorage; never a synced/merged file
   }
 
   if (!ready) {
@@ -219,7 +219,7 @@ export default function App() {
                 <Shield size={12} /> Verified by replay
               </span>
             </div>
-            <Leaderboard myId={myId} dark={dark} />
+            <Leaderboard me={{ pubkeyId: myId, gtUserId: myGtUserId }} dark={dark} />
           </section>
         </main>
       )}

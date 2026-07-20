@@ -1,8 +1,11 @@
 // Score records and the files they live in. Layout (all relative to the app's
 // data folder, versioned as v0/):
-//   v0/scores/<pubkeyId>.jsonl   one signed record per game — you write only yours
+//   v0/scores/<pubkeyId>.jsonl   one signed record per game — single-writer per device
 //   v0/replays/<runId>.txt       the full replayable input log for a run
-//   v0/identity.json             your signing keypair (see identity.ts)
+// The signing key is device-local (localStorage), NOT a workspace file — see
+// identity.ts for why. player.id is the device key's pubkeyId (names the file);
+// player.gtUser is the account id (for the "you" highlight); player.name is the
+// account name.
 
 import { encodeReplay } from '~/engine/replay'
 import type { GameResult, InputEvent } from '~/engine/types'

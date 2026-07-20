@@ -16,7 +16,13 @@ function statusRank(e: Entry): number {
   return 3 // failed
 }
 
-export default function Leaderboard({ myId, dark }: { myId: string | null; dark: boolean }) {
+export default function Leaderboard({
+  me,
+  dark,
+}: {
+  me: { pubkeyId: string | null; gtUserId: string | undefined }
+  dark: boolean
+}) {
   const { entries } = useLeaderboard()
   const [tab, setTab] = useState<Tab>('daily')
   const [watching, setWatching] = useState<{
@@ -77,7 +83,11 @@ export default function Leaderboard({ myId, dark }: { myId: string | null; dark:
           {shown.map((e, idx) => {
             const verified = e.verdict?.status === 'verified'
             if (verified) rank++
-            const mine = e.rec.player.id === myId
+            // "(you)" tracks the account (so all your devices count), falling
+            // back to this device's signing key when there's no account id.
+            const mine =
+              (!!me.gtUserId && e.rec.player.gtUser === me.gtUserId) ||
+              (!!me.pubkeyId && e.rec.player.id === me.pubkeyId)
             const rowStyle: React.CSSProperties = {}
             if (mine) rowStyle.background = 'var(--gt-accent-soft,#3b82f622)'
             if (idx > 0) rowStyle.borderTop = '1px solid var(--gt-divider)'

@@ -1,90 +1,83 @@
-// The player's signing identity. On first run we generate an ECDSA P-256 keypair
-// and store it (as JWK) in v0/identity.json inside the workspace; on later runs
-// we load it back. The private key never leaves the workspace and signs every
-// score the player submits.
+// The player's signing key is a per-DEVICE key pair, stored in localStorage —
+// deliberately NOT in the synced workspace.
 //
-// Honest scope: this key IS the identity on the leaderboard. There's no server to
-// bind it to a verified account, so it proves "the same key signed these runs and
-// nobody tampered with them" — not "this is provably Ada". That's the ceiling for
-// a backend-free, plaintext leaderboard, and it's stated plainly to users.
+// Why this matters: the app's data folder syncs to EVERY workspace member, so a
+// key stored there (as an earlier version did, in v0/identity.json) is SHARED by
+// everyone — one keypair, one pubkeyId, one score file, and a name field that
+// multiple people write and CRDT-merge into garbage. A device-local key gives
+// each player (each browser) a unique signing key, so each score file has a
+// single writer again. A private key must never sync anyway.
+//
+// WHO you are on the board (id + display name) comes from gt.user() — see
+// App.tsx. This key only provides tamper-evidence and a stable per-device file
+// scope (its pubkeyId names your score file and is the record's player.id).
 
 import { exportJwk, generateKeyPair, importSigningKey, pubkeyId } from './sign'
 
-const IDENTITY_PATH = 'v0/identity.json'
+const KEY_STORAGE = 'textris:device-key:v1'
+const NAME_STORAGE = 'textris:name:v1'
 
 export interface Identity {
+  /** Hash of the public key: names this device's score file and is player.id. */
   pubkeyId: string
   publicJwk: JsonWebKey
   privateKey: CryptoKey
-  /** The player's chosen display name (empty until set). */
-  name: string
 }
 
-interface StoredIdentity {
-  v: 1
-  pubkeyId: string
+interface StoredKey {
   publicJwk: JsonWebKey
   privateJwk: JsonWebKey
-  createdAt: string
-  name?: string
 }
 
-export async function loadOrCreateIdentity(): Promise<Identity> {
-  // Wait for the identity file to sync before deciding it's absent. `gt.ready`
-  // only means the workspace connected; on desktop a not-yet-synced readFile
-  // resolves empty (not a throw), so without this we'd mint a fresh keypair and
-  // write a duplicate leaderboard identity on every open.
-  await window.gt.whenFileSynced(IDENTITY_PATH)
-  const existing = await tryLoad()
-  if (existing) return existing
+function readLocal(key: string): string | null {
+  try {
+    return typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null
+  } catch {
+    return null // storage blocked (e.g. some sandboxes)
+  }
+}
+function writeLocal(key: string, value: string): void {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(key, value)
+  } catch {
+    // Storage unavailable — the value stays in memory for this session only.
+  }
+}
 
+/** Load this device's signing key, or generate + persist one. Falls back to an
+ *  ephemeral in-memory key if localStorage is unavailable (records still verify;
+ *  the key just won't persist across reloads). */
+export async function loadOrCreateIdentity(): Promise<Identity> {
+  const raw = readLocal(KEY_STORAGE)
+  if (raw) {
+    try {
+      const stored = JSON.parse(raw) as StoredKey
+      if (stored?.publicJwk && stored?.privateJwk) {
+        const privateKey = await importSigningKey(stored.privateJwk)
+        return {
+          pubkeyId: await pubkeyId(stored.publicJwk),
+          publicJwk: stored.publicJwk,
+          privateKey,
+        }
+      }
+    } catch {
+      // Corrupt stored key — fall through and mint a fresh one.
+    }
+  }
   const pair = await generateKeyPair()
   const publicJwk = await exportJwk(pair.publicKey)
   const privateJwk = await exportJwk(pair.privateKey)
-  const id = await pubkeyId(publicJwk)
-  const stored: StoredIdentity = {
-    v: 1,
-    pubkeyId: id,
-    publicJwk,
-    privateJwk,
-    createdAt: new Date().toISOString(),
-    name: '',
-  }
-  await window.gt.writeFile(IDENTITY_PATH, JSON.stringify(stored, null, 2) + '\n')
-  return { pubkeyId: id, publicJwk, privateKey: pair.privateKey, name: '' }
+  writeLocal(KEY_STORAGE, JSON.stringify({ publicJwk, privateJwk }))
+  return { pubkeyId: await pubkeyId(publicJwk), publicJwk, privateKey: pair.privateKey }
 }
 
-/** Update the stored display name (patches identity.json in place, keys untouched). */
-export async function renameIdentity(name: string): Promise<void> {
-  let text: string
-  try {
-    text = await window.gt.readFile(IDENTITY_PATH)
-  } catch {
-    return
-  }
-  try {
-    const stored = JSON.parse(text) as StoredIdentity
-    stored.name = name
-    await window.gt.writeFile(IDENTITY_PATH, JSON.stringify(stored, null, 2) + '\n')
-  } catch {
-    // Corrupt identity file — leave it; a rename isn't worth clobbering keys.
-  }
+/** The player's manual name override (per device), or null if unset. */
+export function getNameOverride(): string | null {
+  const n = readLocal(NAME_STORAGE)
+  return n && n.trim() ? n : null
 }
 
-async function tryLoad(): Promise<Identity | null> {
-  let text: string
-  try {
-    text = await window.gt.readFile(IDENTITY_PATH)
-  } catch {
-    return null
-  }
-  try {
-    const stored = JSON.parse(text) as StoredIdentity
-    if (!stored?.publicJwk || !stored?.privateJwk) return null
-    const privateKey = await importSigningKey(stored.privateJwk)
-    const id = stored.pubkeyId || (await pubkeyId(stored.publicJwk))
-    return { pubkeyId: id, publicJwk: stored.publicJwk, privateKey, name: stored.name ?? '' }
-  } catch {
-    return null
-  }
+/** Save a manual name override for this device (never synced, never merged). */
+export function setNameOverride(name: string): void {
+  writeLocal(NAME_STORAGE, name)
 }
